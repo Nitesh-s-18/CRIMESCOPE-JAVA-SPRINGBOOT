@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrimeScope — Crime Hotspot Analysis &amp; Risk Forecasting</title>
+    <!-- Plotly CDN for interactive visualizations and cartographic maps -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ==========================================
+         SIDEBAR NAVIGATION & FILTERS
+         ========================================== -->
+    <aside class="sidebar">
+        <div class="brand-container">
+            <div class="brand-icon">🛡️</div>
+            <div>
+                <div class="brand-title">CrimeScope</div>
+                <div class="brand-subtitle">TACTICAL INTEL v2.4 (Spring Boot)</div>
+            </div>
+        </div>
+
+        <div class="nav-section-title">Navigation Module</div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a class="nav-link active" data-target="module-overview">
+                    <span>📊</span> 1. Overview Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-target="module-hotspots">
+                    <span>🗺️</span> 2. Crime Hotspot Map
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-target="module-analytics">
+                    <span>📈</span> 3. Crime Analytics
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-target="module-forecasting">
+                    <span>🔮</span> 4. Risk Forecasting
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-target="module-dataset">
+                    <span>🗄️</span> 5. Dataset Explorer
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-footer">
+            <b>Jurisdiction:</b> Coimbatore District, TN<br>
+            <b>Records:</b> 6,000 Verified Entries<br>
+            <b>Algorithm:</b> DBSCAN &amp; Random Forest<br>
+            <b>Architecture:</b> Spring Boot 3 &amp; Java 21<br>
+            <b>Status:</b> Live Command Center
+        </div>
+    </aside>
+
+    <!-- ==========================================
+         MAIN CONTENT WRAPPER
+         ========================================== -->
+    <main class="main-wrapper">
+
+        <!-- Top Header Banner -->
+        <header class="command-header">
+            <div>
+                <h1 class="command-title">🛡️ CrimeScope — Crime Hotspot Analysis &amp; Risk Forecasting</h1>
+                <p class="command-subtitle">Spatial Intelligence &amp; Predictive Policing Analytics • Coimbatore Metropolitan Region</p>
+            </div>
+            <div>
+                <span class="status-badge">● SYSTEM OPERATIONAL</span>
+            </div>
+        </header>
+
+        <!-- ==========================================
+             MODULE 1: OVERVIEW DASHBOARD
+             ========================================== -->
+        <section id="module-overview" class="module-view active">
+            <h2 class="view-heading">📊 Executive Command Overview</h2>
+            <p class="view-subheading">Aggregated spatial metrics and longitudinal crime indicators across Coimbatore district.</p>
+
+            <!-- Day-by-Day Surveillance & Temporal Filter Panel -->
+            <div class="date-filter-panel">
+                <!-- Row 1: Primary Day-by-Day Stepper Navigation -->
+                <div class="stepper-header-row">
+                    <div class="stepper-label-group">
+                        <span class="stepper-badge">📅 DAY-BY-DAY SURVEILLANCE</span>
+                        <span class="stepper-desc">Step through dates day-by-day or choose any calendar date</span>
+                    </div>
+                    <div class="stepper-controls-group">
+                        <button type="button" id="day-prev-btn" class="stepper-nav-btn" title="Go to Previous Day">◀ Previous Day</button>
+                        <div class="stepper-date-wrapper">
+                            <input type="date" id="overview-filter-date" class="stepper-date-picker"
+                                   th:min="${min_date}" th:max="${max_date}" th:value="${default_date}"
+                                   min="2023-01-01" max="2024-12-30" value="2024-12-30">
+                        </div>
+                        <button type="button" id="day-next-btn" class="stepper-nav-btn" title="Go to Next Day">Next Day ▶</button>
+                        <button type="button" id="day-latest-btn" class="stepper-latest-btn" title="Jump to Latest Recorded Date"
+                                th:text="'📌 Latest Day (' + ${max_date} + ')'">📌 Latest Day (2024-12-30)</button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Area, Crime Category, Range & Temporal Controls -->
+                <div class="date-filter-row" style="margin-top: 14px;">
+                    <div class="date-filter-item">
+                        <label class="filter-label">📍 Area:</label>
+                        <select id="overview-filter-area" class="form-select">
+                            <option value="ALL">All Areas (Coimbatore Region)</option>
+                            <option th:each="area : ${all_areas}" th:value="${area}" th:text="${area}"></option>
+                        </select>
+                    </div>
+
+                    <div class="date-filter-item">
+                        <label class="filter-label">🚨 Crime Category:</label>
+                        <select id="overview-filter-crime-type" class="form-select">
+                            <option value="ALL">All Crime Categories</option>
+                            <option th:each="ctype : ${all_crime_types}" th:value="${ctype}" th:text="${ctype}"></option>
+                        </select>
+                    </div>
+
+                    <div class="date-filter-item">
+                        <label class="filter-label">📅 Range View (From):</label>
+                        <input type="date" id="overview-start-date" class="form-input"
+                               th:min="${min_date}" th:max="${max_date}" th:value="${min_date}"
+                               min="2023-01-01" max="2024-12-30" value="2023-01-01">
+                    </div>
+
+                    <div class="date-filter-item">
+                        <label class="filter-label">📅 Range View (To):</label>
+                        <input type="date" id="overview-end-date" class="form-input"
+                               th:min="${min_date}" th:max="${max_date}" th:value="${max_date}"
+                               min="2023-01-01" max="2024-12-30" value="2024-12-30">
+                    </div>
+
+                    <div class="date-filter-item" style="max-width: 130px;">
+                        <label class="filter-label">📆 Year:</label>
+                        <select id="overview-filter-year" class="form-select">
+                            <option value="ALL">All Years</option>
+                            <option th:each="y : ${all_years}" th:value="${y}" th:text="${y}"></option>
+                        </select>
+                    </div>
+
+                    <div class="date-filter-item" style="max-width: 130px;">
+                        <label class="filter-label">🗓️ Month:</label>
+                        <select id="overview-filter-month" class="form-select">
+                            <option value="ALL">All Months</option>
+                            <option th:each="m : ${months_list}" th:value="${m.id}" th:text="${m.name}"></option>
+                        </select>
+                    </div>
+
+                    <div class="date-filter-actions">
+                        <button id="overview-apply-range-btn" class="btn-primary" style="padding: 9px 18px; width: auto; font-size: 13px;">Apply Filters</button>
+                        <button id="overview-reset-date-btn" class="btn-secondary" style="padding: 9px 14px; width: auto; font-size: 13px;">Reset to All Data</button>
+                    </div>
+                </div>
+
+                <!-- Row 3: Quick Presets -->
+                <div class="date-presets-row" style="display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">⚡ QUICK RANGES:</span>
+                    <button type="button" class="preset-btn" data-preset="single_day"
+                            th:text="'Single Day (' + ${default_date} + ')'">Single Day (2024-12-30)</button>
+                    <button type="button" class="preset-btn" data-preset="7d">Last 7 Days</button>
+                    <button type="button" class="preset-btn" data-preset="14d">Last 14 Days</button>
+                    <button type="button" class="preset-btn" data-preset="30d">Last 30 Days</button>
+                    <button type="button" class="preset-btn" data-preset="latest_month">December 2024</button>
+                    <button type="button" class="preset-btn active" data-preset="all">🌐 All Records (2023-2024)</button>
+                </div>
+
+                <!-- Row 4: Status and Interactive Hints -->
+                <div class="date-filter-status" style="margin-top: 12px;">
+                    <span id="active-filter-badge" class="badge-status-tag"
+                          th:text="'Showing: All Records (2023-2024) (' + ${#numbers.formatInteger(total_records, 1, 'COMMA')} + ' Incidents)'">
+                        Showing: All Records (2023-2024) (6,000 Incidents)
+                    </span>
+                    <span class="interactive-hint">💡 <b>Interactive Surveillance:</b> Select any calendar day, date range, or click "All Records (2023-2024)". Click any point on charts to inspect details.</span>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Crime Records</div>
+                    <div id="kpi-total-records" class="metric-value" th:text="${#numbers.formatInteger(total_records, 1, 'COMMA')}">6,000</div>
+                    <div class="metric-sub">SQLite Database Persisted</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Active Hotspot Clusters</div>
+                    <div id="kpi-hotspots" class="metric-value" th:text="${num_hotspots}">14</div>
+                    <div class="metric-sub">DBSCAN Density-Identified</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Highest-Volume Area</div>
+                    <div id="kpi-highest-area" class="metric-value" style="font-size: 21px;" th:text="${highest_risk_area}">Gandhipuram</div>
+                    <div class="metric-sub">Peak Incident Concentration</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Primary Crime Category</div>
+                    <div id="kpi-primary-crime" class="metric-value" style="font-size: 21px;" th:text="${most_common_crime}">Theft</div>
+                    <div class="metric-sub" th:text="${#numbers.formatInteger(most_common_count, 1, 'COMMA')} + ' Recorded Incidents'">1,150 Recorded Incidents</div>
+                </div>
+            </div>
+
+            <div class="charts-grid-2">
+                <div class="chart-card">
+                    <div id="chart-category-container" th:utext="${chart_category_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS CHART</span>
+                            <span class="guide-title">Crime Category Proportions</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Breakdown of recorded crimes across offense types (Theft, Burglary, Robbery, etc.).<br>
+                            <b>How to read:</b> Slices indicate percentage share; the center counter indicates total crimes within the current filter.<br>
+                            <b>Operational Action:</b> Deploy specialized crime prevention units focused on the dominant categories.
+                        </p>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div id="chart-timeline-container" th:utext="${chart_timeline_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS CHART</span>
+                            <span class="guide-title">Crime Incident Monitoring Timeline</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>Macro Timeline (All Data):</b> Renders a single smooth trendline across all 24 months showing overall incident trajectory.<br>
+                            <b>Granular Timeline (Focused Ranges):</b> When viewing single months (e.g. Dec 2024) or short ranges, displays daily recorded incident counts for every calendar day.<br>
+                            <b>Interactive Drill-down:</b> Click any point on the line to isolate that time period across all charts.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid-2">
+                <div class="chart-card">
+                    <div id="chart-hourly-container" th:utext="${chart_hourly_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS CHART</span>
+                            <span class="guide-title">24-Hour Crime Activity Profile</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Recorded crime counts broken down across every hour of the 24-hour cycle (12 AM to 11 PM).<br>
+                            <b>What Day is Displayed:</b> When viewing <b>All Records</b> or a <b>Date Range</b>, this chart aggregates all days in that period to show general time-of-day risk. When a <b>Single Day</b> is selected, it displays the exact 24-hour profile for that specific calendar date.<br>
+                            <b>Color Legend:</b> <span class="highlight">Red bars</span> = Peak danger windows (Top 25%); Amber = Moderate; Sky blue = Low baseline.<br>
+                            <b>Operational Action:</b> Intensify patrol beats during evening/night danger windows (6 PM to 10 PM).
+                        </p>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div id="chart-areas-container" th:utext="${chart_areas_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS CHART</span>
+                            <span class="guide-title">Top Active Neighborhoods by Crime Volume</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Municipal areas and beats ranked by total recorded incidents.<br>
+                            <b>How to read:</b> Longer horizontal bars indicate higher crime concentrations; numbers at bar ends show exact total incidents.<br>
+                            <b>Operational Action:</b> Prioritize beat constable deployments, stationary pickets, and CCTV surveillance in top-ranking areas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             MODULE 2: CRIME HOTSPOT MAP
+             ========================================== -->
+        <section id="module-hotspots" class="module-view">
+            <h2 class="view-heading">🗺️ Geospatial Hotspot Clustering (DBSCAN)</h2>
+            <p class="view-subheading">Density-Based Spatial Clustering of Applications with Noise using Earth Haversine spherical metrics.</p>
+
+            <div class="control-card">
+                <div class="form-row">
+                    <div>
+                        <label class="filter-label">Neighborhood Radius (Eps in km):</label>
+                        <input type="range" id="hotspot-eps-slider" min="0.3" max="2.0" step="0.1" value="0.6" style="width: 100%;">
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Radius: <span id="eps-val-disp">0.6</span> km</div>
+                    </div>
+                    <div>
+                        <label class="filter-label">Min Samples (Cluster Core):</label>
+                        <input type="range" id="hotspot-min-pts-slider" min="10" max="60" step="5" value="25" style="width: 100%;">
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Min Points: <span id="pts-val-disp">25</span> incidents</div>
+                    </div>
+                    <div>
+                        <label class="filter-label">Color Data Points By:</label>
+                        <select id="hotspot-color-mode" class="form-select">
+                            <option value="crime_type">Crime Category</option>
+                            <option value="cluster_id">DBSCAN Cluster ID</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="update-hotspots-btn" class="btn-primary" style="width: auto; padding: 8px 20px;">Re-run Spatial Clustering</button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Hotspot Clusters Found</div>
+                    <div id="hotspot-stat-clusters" class="metric-value" th:text="${dbscan_stats.numClusters}">14</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Hotspot Incidents</div>
+                    <div id="hotspot-stat-crimes" class="metric-value" th:text="${#numbers.formatInteger(dbscan_stats.hotspotCrimes, 1, 'COMMA')}">5,200</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Isolated Incidents (Noise)</div>
+                    <div id="hotspot-stat-noise" class="metric-value" th:text="${#numbers.formatInteger(dbscan_stats.noiseCrimes, 1, 'COMMA')}">800</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Noise Percentage</div>
+                    <div id="hotspot-stat-noise-pct" class="metric-value" th:text="${dbscan_stats.noisePct} + '%'">13.3%</div>
+                </div>
+            </div>
+
+            <div class="chart-card-full">
+                <div id="map-container" th:utext="${chart_map_html}"></div>
+                <div class="chart-guide">
+                    <div class="chart-guide-header">
+                        <span class="guide-tag">💡 HOW TO READ THIS MAP</span>
+                        <span class="guide-title">Geospatial Density Clustering (DBSCAN)</span>
+                    </div>
+                    <p class="guide-desc">
+                        <b>What it shows:</b> Exact GPS coordinates of crime incidents across Coimbatore metropolitan region clustered using spherical Earth distance.<br>
+                        <b>Symbol Legend:</b> <span class="highlight">Red pulsing circles</span> indicate dense hotspot cluster centroids. <b>Colored points</b> represent verified cluster incidents. <b>Gray translucent points</b> represent isolated random noise incidents.<br>
+                        <b>Operational Action:</b> Deploy patrol vehicles to circle within the red centroid boundaries; adjust Eps/MinPts sliders above to refine cluster tightness.
+                    </p>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 12px; font-size: 16px;">📍 Identified High-Density Hotspots</h3>
+            <div id="hotspot-table-container" class="table-responsive" th:utext="${hotspot_table_html}">
+            </div>
+
+            <h3 style="margin-bottom: 12px; font-size: 16px;">🏆 Area Vulnerability Ranking</h3>
+            <div class="table-responsive" th:utext="${area_rankings_table_html}">
+            </div>
+        </section>
+
+        <!-- ==========================================
+             MODULE 3: CRIME ANALYTICS
+             ========================================== -->
+        <section id="module-analytics" class="module-view">
+            <h2 class="view-heading">📈 Comprehensive Spatio-Temporal Analytics</h2>
+            <p class="view-subheading">In-depth multi-dimensional cross-tabulations and temporal incident profiling.</p>
+
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="tab-temporal">Temporal Intensity</button>
+                <button class="tab-btn" data-tab="tab-category">Category &amp; Location</button>
+                <button class="tab-btn" data-tab="tab-demographics">Demographic Patterns</button>
+            </div>
+
+            <div id="tab-temporal" class="tab-content active">
+                <div class="chart-card-full">
+                    <div id="chart-heatmap-container" th:utext="${chart_heatmap_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS HEATMAP</span>
+                            <span class="guide-title">Weekly Spatio-Temporal Matrix (Day of Week vs. Hour)</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> 7-day x 24-hour heat grid displaying incident density across all 168 hours of the week.<br>
+                            <b>Color Meaning:</b> Dark Blue = Low activity (0–5 crimes); Blue/Cyan = Moderate; Amber = Elevated; <span class="highlight">Bright Red</span> = Severe peak danger hotspot.<br>
+                            <b>Operational Action:</b> Synchronize officer shift rotations and high-intensity roving patrols during red and gold time slots.
+                        </p>
+                    </div>
+                </div>
+                <div class="chart-card-full">
+                    <div id="chart-trend-freq-container" th:utext="${chart_timeline_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS TIMELINE</span>
+                            <span class="guide-title">Multi-Period Longitudinal Trend Analysis</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Continuous incident volume over time with moving average baseline trend smoothing.<br>
+                            <b>How to read:</b> Spikes indicate surge periods; downward trends show positive outcomes from targeted enforcement operations.<br>
+                            <b>Interactive Drill-down:</b> Click any data point directly on the graph to filter the entire dashboard to that exact date or month.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-category" class="tab-content">
+                <div class="chart-card-full">
+                    <div id="chart-crosstab-container" th:utext="${chart_crosstab_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS CHART</span>
+                            <span class="guide-title">Environmental Vulnerability (Location vs Crime Category)</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Stacked distribution revealing which crime types occur in each physical setting (Commercial, Residential, Transit, etc.).<br>
+                            <b>How to read:</b> Total bar height indicates overall environmental vulnerability; colored segments break down specific offense types.<br>
+                            <b>Operational Action:</b> Tailor situational crime prevention (e.g. enhanced streetlights and CCTV at transit hubs; neighborhood watch in residential sectors).
+                        </p>
+                    </div>
+                </div>
+                <div class="chart-card-full">
+                    <div id="chart-top-areas-full" th:utext="${chart_areas_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS CHART</span>
+                            <span class="guide-title">Full Municipal Area Incident Ranking</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Comprehensive ranked comparison of municipal sectors across Coimbatore.<br>
+                            <b>How to read:</b> Longest bars identify top-priority zones with highest cumulative crime counts.<br>
+                            <b>Operational Action:</b> Guides beat resource allocations, checkpoint stationing, and mobile squad routing.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-demographics" class="tab-content">
+                <div class="chart-card-full">
+                    <div id="chart-demographics-container" th:utext="${chart_demographics_html}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS BOX PLOT</span>
+                            <span class="guide-title">Victim Age Demographics by Crime Category</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Distribution of victim ages across each crime category.<br>
+                            <b>How to read:</b> The horizontal line inside each box is the <b>Median Age</b>. The colored box spans the <b>middle 50% of victims</b> (25th to 75th percentiles). Whiskers extend to minimum and maximum victim ages.<br>
+                            <b>Operational Action:</b> Design tailored community safety advisories focused on the age groups most vulnerable to specific offenses.
+                        </p>
+                    </div>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Mean Victim Age</div>
+                        <div class="metric-value" th:text="${avg_victim_age} + ' yrs'">35.2 yrs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Median Victim Age</div>
+                        <div class="metric-value" th:text="${median_victim_age} + ' yrs'">35 yrs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Youngest Victim</div>
+                        <div class="metric-value" th:text="${min_victim_age} + ' yrs'">18 yrs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Eldest Victim</div>
+                        <div class="metric-value" th:text="${max_victim_age} + ' yrs'">75 yrs</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             MODULE 4: RISK FORECASTING
+             ========================================== -->
+        <section id="module-forecasting" class="module-view">
+            <h2 class="view-heading">🔮 Predictive Area-Time Crime Risk Forecasting</h2>
+            <p class="view-subheading">Operational machine learning risk engine utilizing trained Scikit-Learn Random Forest Classifier.</p>
+
+            <div class="control-card">
+                <div style="font-size: 13px; color: var(--accent-sky); margin-bottom: 16px; font-weight: 500;">
+                    <b>Operational Context:</b> Select tactical parameters below to assess forecasted vulnerability for targeted police patrol allocation and preventive resource mobilization.
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label class="filter-label">Target Tactical Area:</label>
+                        <select id="pred-area" class="form-select">
+                            <option th:each="area : ${all_areas}" th:value="${area}" th:text="${area}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Suspected Crime Category:</label>
+                        <select id="pred-crime-type" class="form-select">
+                            <option th:each="ctype : ${all_crime_types}" th:value="${ctype}" th:text="${ctype}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Physical Environment Type:</label>
+                        <select id="pred-location-type" class="form-select">
+                            <option th:each="loc : ${all_locations}" th:value="${loc}" th:text="${loc}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label class="filter-label">Day of Week:</label>
+                        <select id="pred-day" class="form-select">
+                            <option value="Monday">Monday</option>
+                            <option value="Tuesday">Tuesday</option>
+                            <option value="Wednesday">Wednesday</option>
+                            <option value="Thursday">Thursday</option>
+                            <option value="Friday" selected>Friday</option>
+                            <option value="Saturday">Saturday</option>
+                            <option value="Sunday">Sunday</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="filter-label">Time of Day (Hour: 00 to 23):</label>
+                        <input type="number" id="pred-hour" class="form-input" min="0" max="23" value="21">
+                    </div>
+                    <div>
+                        <label class="filter-label">Forecast Month:</label>
+                        <select id="pred-month" class="form-select">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10" selected>October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="run-forecast-btn" class="btn-primary">🚀 Run Risk Forecasting Analysis</button>
+            </div>
+
+            <!-- Dynamic Forecast Results -->
+            <div id="forecast-results-container">
+                <h3 style="margin-bottom: 14px; font-size: 17px;">🎯 Risk Forecast Assessment</h3>
+                
+                <div class="metrics-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="metric-card">
+                        <div class="metric-label">Predicted Risk Tier</div>
+                        <div style="margin-top: 8px;">
+                            <span id="forecast-tier-badge" class="badge-high">HIGH RISK</span>
+                        </div>
+                        <div id="forecast-confidence" class="metric-sub" style="margin-top: 10px;">Confidence: 75%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Historical Area Baseline</div>
+                        <div id="forecast-baseline" class="metric-value" style="font-size: 20px;">High Baseline</div>
+                        <div id="forecast-baseline-sub" class="metric-sub">Historical Score: 1.45 / 2.0</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Patrol Window</div>
+                        <div id="forecast-window" class="metric-value" style="font-size: 19px;">Friday, 21:00 hrs</div>
+                        <div id="forecast-window-sub" class="metric-sub">Season: Post-Monsoon | Weekend: Yes</div>
+                    </div>
+                </div>
+
+                <div class="control-card">
+                    <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">Model Probability Distribution Across Risk Tiers</h4>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                            <span>Low Risk Probability:</span>
+                            <b id="prob-low-text">15.0%</b>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="prob-low-bar" class="progress-bar-fill" style="width: 15%; background: var(--accent-green);"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                            <span>Medium Risk Probability:</span>
+                            <b id="prob-med-text">20.0%</b>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="prob-med-bar" class="progress-bar-fill" style="width: 20%; background: var(--accent-amber);"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
+                            <span>High Risk Probability:</span>
+                            <b id="prob-high-text">65.0%</b>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="prob-high-bar" class="progress-bar-fill" style="width: 65%; background: var(--accent-red);"></div>
+                        </div>
+                    </div>
+
+                    <div id="forecast-directive" class="alert-box alert-high">
+                        🚨 <b>High Alert for Gandhipuram:</b> Elevated probability (65.0%) of serious incidents during Friday at 21:00 hrs. <b>Recommended:</b> Deploy proactive vehicular patrols and checkpoint surveillance near Commercial Area.
+                    </div>
+                </div>
+
+                <div class="chart-card-full">
+                    <div id="forecast-feature-chart" th:utext="${default_feature_chart}"></div>
+                    <div class="chart-guide">
+                        <div class="chart-guide-header">
+                            <span class="guide-tag">💡 HOW TO READ THIS CHART</span>
+                            <span class="guide-title">Predictive Decision Drivers (Random Forest Feature Weights)</span>
+                        </div>
+                        <p class="guide-desc">
+                            <b>What it shows:</b> Relative statistical influence of each predictor variable in determining crime risk level.<br>
+                            <b>How to read:</b> Longer bars at the top have the greatest mathematical weight (e.g., Geographic Area and Physical Location). Percentages show each feature's contribution to risk calculation.<br>
+                            <b>Model Transparency:</b> Explains exactly why the AI classified a chosen patrol window as High, Medium, or Low risk.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==========================================
+             MODULE 5: DATASET EXPLORER
+             ========================================== -->
+        <section id="module-dataset" class="module-view">
+            <h2 class="view-heading">🗄️ Forensic Crime Dataset Explorer</h2>
+            <p class="view-subheading">Direct inspection and validation of persistent SQLite records and schema definitions.</p>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Records</div>
+                    <div class="metric-value" th:text="${#numbers.formatInteger(total_records, 1, 'COMMA')}">6,000</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total Attributes</div>
+                    <div class="metric-value">13 Columns</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Missing Values</div>
+                    <div class="metric-value" style="color: var(--accent-green);">0 (Clean)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Database Storage</div>
+                    <div class="metric-value">SQLite DB</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <input type="text" id="dataset-search-input" class="form-input" placeholder="🔍 Search records by Area, Crime Type, Crime ID, Location..." style="max-width: 450px;">
+                <a href="/api/download_csv" class="btn-secondary">📥 Download Dataset (CSV)</a>
+            </div>
+
+            <div class="table-responsive" style="max-height: 440px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Crime ID</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Area</th>
+                            <th>Crime Type</th>
+                            <th>Location Type</th>
+                            <th>Victim Age</th>
+                            <th>Day</th>
+                            <th>Hour</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataset-table-body">
+                        <tr th:each="r : ${dataset_sample}">
+                            <td><code th:text="${r.crimeId}">CS-000001</code></td>
+                            <td th:text="${r.date}">2024-01-01</td>
+                            <td th:text="${r.time}">12:00:00</td>
+                            <td><b th:text="${r.area}">Gandhipuram</b></td>
+                            <td th:text="${r.crimeType}">Theft</td>
+                            <td th:text="${r.locationType}">Commercial Area</td>
+                            <td th:text="${r.victimAge}">32</td>
+                            <td th:text="${r.dayOfWeek}">Monday</td>
+                            <td th:text="${r.hour} + ':00'">12:00</td>
+                            <td th:text="${r.latitude}">11.0180</td>
+                            <td th:text="${r.longitude}">76.9676</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="/static/js/main.js"></script>
+    <script>
+        // Update slider number display
+        document.getElementById("hotspot-eps-slider").addEventListener("input", (e) => {
+            document.getElementById("eps-val-disp").innerText = e.target.value;
+        });
+        document.getElementById("hotspot-min-pts-slider").addEventListener("input", (e) => {
+            document.getElementById("pts-val-disp").innerText = e.target.value;
+        });
+    </script>
+</body>
+</html>
